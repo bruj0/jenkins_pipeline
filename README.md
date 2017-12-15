@@ -48,50 +48,44 @@ We will deploy a local VM , you can use any type of deployment that CoreOS accep
 
 File: jenkins/coreos/cloud-config.yml 
 
-<table>
-  <tr>
-    <td>#cloud-config
 
+```yaml
+#cloud-config
 ssh_authorized_keys:
+
 - ssh-rsa AAAAB3....
 
 hostname: Pipe1
-
 users:
- - name: "core"
-   groups:
-     - sudo
-     - docker
-coreos:
- update:
-   reboot-strategy: off
- units:
-   - name: systemd-networkd.service
-     command: stop
-   - name: static.network
-     runtime: true
-     content: |
-       [Match]
-       Name=eth0
-
-       [Network]
-       Address=192.168.X.X/24
-       Gateway=192.168.X.X
-       DNS=8.8.8.8
-   - name: down-interfaces.service
-     command: start
-     content: |
-       [Service]
-       Type=oneshot
-       ExecStart=/usr/bin/ip link set eth0 down
-       ExecStart=/usr/bin/ip addr flush dev eth0
-   - name: systemd-networkd.service
-     command: restart
-</td>
-  </tr>
-</table>
-
-
+- name: "core"
+  groups:
+  - sudo
+  - docker
+    coreos:
+     update:
+    reboot-strategy: off
+     units:
+  - name: systemd-networkd.service
+    command: stop
+  - name: static.network
+    runtime: true
+    content: |
+      [Match]
+      Name=eth0
+      [Network]
+      Address=192.168.X.X/24
+      Gateway=192.168.X.X
+      DNS=8.8.8.8
+  - name: down-interfaces.service
+    command: start
+    content: |
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/bin/ip link set eth0 down
+      ExecStart=/usr/bin/ip addr flush dev eth0
+  - name: systemd-networkd.service
+    command: restart
+```
 This will create a "**core**" user that will authenticate to the OS with a **SSH key**, remember that this should not be used in a production server.
 
 We also add this user to the **docker **and **sudo **groups so we can use both tools.
@@ -108,19 +102,21 @@ We will run Jenkins and Nginx under a Docker Compose project.
 
 File: jenkins/Dockerfile
 
-<table>
-  <tr>
-    <td>FROM jenkins/jenkins:lts
+```dockerfile
+FROM jenkins/jenkins:lts
 USER root
+
 COPY docker-engine.key /tmp/docker-engine.key
+
 RUN apt-get update && echo "deb https://apt.dockerproject.org/repo debian-stretch main" > /etc/apt/sources.list.d/docker.list \
+
    && apt-get install apt-transport-https && apt-key add /tmp/docker-engine.key && apt-get update && apt-get install -y docker-engine
+
 RUN usermod -aG docker jenkins
 
-USER jenkins</td>
-  </tr>
-</table>
+USER jenkins
 
+```
 
 We use the **jenkins:lts** image but in production you should use a tagged version like **jenkins:2.7.3-alpine**
 
@@ -138,66 +134,58 @@ Nginx is our main Ingress point and runs in a separate container:
 
 File: nginx/Dockerfile
 
-<table>
-  <tr>
-    <td>FROM nginx:1.12.2-alpine
+```dockerfile
+FROM nginx:1.12.2-alpine
+#Add default configuration
 
-# Add default configuration
 COPY conf/wildcard.conf /etc/nginx/conf.d/wildcard.conf
 
-EXPOSE 80</td>
-  </tr>
-</table>
-
+EXPOSE 80
+```
 
 We add a configuration file to our container and use the official Nginx image for Alpine.
 
 File: nginx/conf/wildcard.conf
 
-<table>
-  <tr>
-    <td>map $sname $port {
+```nginx
+map $sname $port {
  default 80;
  "project1" 80;
  "project2" 80;
-# ...
  "jenkins" 8080;
 }
-
 server {
+
    listen 80;
-   server_name ~^(?<sname>.+)\.devel\.example\.com$;
-   
-   location / {
-     sendfile off;
-     proxy_pass         http://$sname:$port;
-     proxy_redirect     $scheme://$sname:$port/ /;
-     proxy_http_version 1.1;
-     resolver 127.0.0.11;
 
-     proxy_set_header   Host              $host;
-     proxy_set_header   X-Real-IP         $remote_addr;
-     proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
-     proxy_set_header   X-Forwarded-Proto $scheme;
-     proxy_max_temp_file_size 0;
+   server_name ~^(?<sname>.+).devel.example.com$;
 
-     #this is the maximum upload size
-     client_max_body_size       10m;
-     client_body_buffer_size    128k;
+location / {
+ sendfile off;
+ proxy_pass         http://$sname:$port;
+ proxy_redirect     $scheme://$sname:$port/ /;
+ proxy_http_version 1.1;
+ resolver 127.0.0.11;
 
-     proxy_connect_timeout      90;
-     proxy_send_timeout         90;
-     proxy_read_timeout         90;
-     proxy_request_buffering    off; # Required for HTTP CLI commands in Jenkins > 2.54
-     # workaround for https://issues.jenkins-ci.org/browse/JENKINS-45651
-     add_header 'X-SSH-Endpoint' '$host.devel.example.com:50022' always;
-   }
+ proxy_set_header   Host              $host;
+ proxy_set_header   X-Real-IP         $remote_addr;
+ proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+ proxy_set_header   X-Forwarded-Proto $scheme;
+ proxy_max_temp_file_size 0;
+
+ #this is the maximum upload size
+ client_max_body_size       10m;
+ client_body_buffer_size    128k;
+
+ proxy_connect_timeout      90;
+ proxy_send_timeout         90;
+ proxy_read_timeout         90;
+ proxy_request_buffering    off; # Required for HTTP CLI commands in Jenkins > 2.54
+ # workaround for https://issues.jenkins-ci.org/browse/JENKINS-45651
+ add_header 'X-SSH-Endpoint' '$host.devel.example.com:50022' always;
+ }
 }
-
-</td>
-  </tr>
-</table>
-
+```
 
 All this wildcard configuration does it connect our applications domain name with the proper service living inside a container.
 
@@ -213,9 +201,8 @@ More information: [http://nginx.org/en/docs/http/ngx_http_map_module.html](http:
 
 File: jenkins/docker-compose.yml
 
-<table>
-  <tr>
-    <td>version: "3"
+```dockerfile
+version: "3"
 services:
  master:
    build: ./jenkins
@@ -241,10 +228,8 @@ volumes:
 networks:
  default:
    external:
-     name: jenkins_default</td>
-  </tr>
-</table>
-
+     name: jenkins_default
+```
 
 * We use 2 volumes to persist configuration and logs for Jenkins: **jenkins-data** and **jenkins-log**
 
@@ -260,9 +245,8 @@ To start this services we will use a unit file for Systemd which is the service 
 
 File: jenkins/coreos/jenkins.service
 
-<table>
-  <tr>
-    <td>[Unit]
+```ini
+[Unit]
 Description=Jenkins container starter
 After=docker.service network-online.target
 Requires=docker.service network-online.target
@@ -284,10 +268,7 @@ ExecStop=/opt/bin/docker-compose down
 [Install]
 WantedBy=multi-user.target
 
-</td>
-  </tr>
-</table>
-
+```
 
 * This file should be inside **/etc/systemd/system**
 
@@ -331,9 +312,8 @@ This code will be run each time a new commit is detected.
 
 File: project1/Jenkinsfile
 
-<table>
-  <tr>
-    <td>node {
+```groovy
+node {
 
  stage 'Checkout'
     checkout scm
@@ -371,10 +351,8 @@ def handleError(String message){
  slackSend color: 'danger', message: "${message}"
  sh 'exit 1'
 }
-</td>
-  </tr>
-</table>
 
+```
 
 * Change **SERVER_INTERNAL_IP** with the internal IP of your server, this is how we tell the Docker engine to pull and restart the containers once a build has passed testing and building.
 
@@ -382,26 +360,25 @@ def handleError(String message){
 
 File: project1/.jenkins-env
 
-<table>
-  <tr>
-    <td>imagename="project1-front"</td>
-  </tr>
-</table>
+
+```bash
+imagename="project1-front"
+```
+
 
 
 * This will checkout the code and run the equivalent to: **docker build -t $imagename:$branch_name .**
 
 * For example: **docker build mycompany/project1:dev**
-
 * Here you could add a push command after testing has passed by adding a new stage ie:
 
-<table>
-  <tr>
-    <td> stage ('Push') {
-    customImage.push(""${imagename}:${tag}");
- }</td>
-  </tr>
-</table>
+
+```groovy
+ stage ('Push') {
+    customImage.push(“"${imagename}:${tag}”);
+ }
+```
+
 
 
 # Unit Testing
@@ -414,17 +391,17 @@ After the build passes all the tests it will be pushed to the repository to the 
 
 This can be done by adding a new stage to the pipeline in the Jenkinsfile file.
 
-<table>
-  <tr>
-    <td>    stage('Unit Testing) {
-        /* Ideally, we would run a test framework against our image.
+
+```groovy
+    stage('Unit Testing) {
+        /* Ideally, we would run a test framework against our image.*/
         customImage.inside {
             sh 'echo "Tests passed"'
         }
     }
-</td>
-  </tr>
-</table>
+
+```
+
 
 
 This will run inside the Docker container we just built.
@@ -445,12 +422,12 @@ For this we will need a new user called "jenkins-service" that has access to sud
 
 File: jenkins/coreos/jenkins-service.sudoers
 
-<table>
-  <tr>
-    <td>Cmnd_Alias RESTART_PROJECT1 = /bin/systemctl reload project1.service
-jenkins-service ALL=(ALL:ALL) NOPASSWD: RESTART_PROJECT1</td>
-  </tr>
-</table>
+
+```ini
+Cmnd_Alias RESTART_PROJECT1 = /bin/systemctl reload project1.service
+jenkins-service ALL=(ALL:ALL) NOPASSWD: RESTART_PROJECT1
+```
+
 
 
 This file should live under /etc/sudoers.d/ directory.
@@ -459,9 +436,9 @@ This file should live under /etc/sudoers.d/ directory.
 
 This will be used only to run our docker-puller helper application and is not needed to run the example project.
 
-<table>
-  <tr>
-    <td>mkdir -p /opt/bin
+
+```bash
+mkdir -p /opt/bin
 cd /opt
 wget http://downloads.activestate.com/ActivePython/releases/${VERSION}/${PACKAGE}.tar.gz
 tar -xzvf ${PACKAGE}.tar.gz
@@ -471,56 +448,46 @@ ln -sf /opt/python/bin/pip /opt/bin/pip
 ln -sf /opt/python/bin/python /opt/bin/python
 ln -sf /opt/python/bin/python /opt/bin/python2
 ln -sf /opt/python/bin/virtualenv /opt/bin/virtualenv
-</td>
-  </tr>
-</table>
-
+```
 
 ### Installing Docker-puller
 
 We follow the simple steps to install docker puller:
 
-<table>
-  <tr>
-    <td>su - jenkins-service
+
+```bash
+su - jenkins-service
 git clone https://github.com/glowdigitalmedia/docker-puller.git
 cd docker-puller
 virtualenv dockerpuller/
 source dockerpuller/bin/activate
-pip install -r requirements.txt</td>
-  </tr>
-</table>
-
-
-The configuration will be:
+pip install -r requirements.txt
+```
+#### The configuration will be:
 
 File: jenkins/docker-puller/config.json
 
-<table>
-  <tr>
-    <td>{
+```json
+{
    "host": "SERVER_INTERNAL_IP",
    "port": 9010,
    "token": "7a5afff405e7bb61efc424026d6d38c1",
    "hooks": {
        "project1_restart": "scripts/restart-project1.sh"
    }
-}</td>
-  </tr>
-</table>
-
+}
+```
 
 File: jenkins/docker-puller/restart-project1.sh
 
-<table>
-  <tr>
-    <td>#!/bin/bash
-sudo /bin/systemctl reload project1.service &</td>
-  </tr>
-</table>
+```bash
+#!/bin/bash
+sudo /bin/systemctl reload project1.service &
+```
 
+An empty POST to the URL: 
 
-So an empty POST to the URL: [http://SERVER_INTERNAL_IP:9010/7a5afff405e7bb61efc424026d6d38c1/project1/project1_restart](http://SERVER_INTERNAL_IP:9010/7a5afff405e7bb61efc424026d6d38c1/project1/project1_restart)
+[http://SERVER_INTERNAL_IP:9010/7a5afff405e7bb61efc424026d6d38c1/project1/project1_restart](http://SERVER_INTERNAL_IP:9010/7a5afff405e7bb61efc424026d6d38c1/project1/project1_restart)
 
 Will run our script at docker-puller/scripts/restart-project1.sh.
 
@@ -530,9 +497,9 @@ We will configure docker-puller as a system service by using this systemd unit:
 
 File: jenkins/coreos/docker-puller.service
 
-<table>
-  <tr>
-    <td>[Unit]
+
+```ini
+[Unit]
 Description=Project1 reloader
 After=syslog.target network.target
 
@@ -544,9 +511,9 @@ ExecStart=/home/jenkins-service/docker-puller/dockerpuller/bin/python /home/jenk
 Restart=on-abort
 
 [Install]
-WantedBy=multi-user.target</td>
-  </tr>
-</table>
+WantedBy=multi-user.target
+```
+
 
 
 ### Example application Project1
@@ -557,9 +524,9 @@ It will orchestrated using docker-compose and each one of the parts will have it
 
 This docker-compose file describes the "dev" branch of our application and can be used for any other branch like master or production.
 
-<table>
-  <tr>
-    <td>version: '3'
+
+```dockerfile
+version: '3'
 
 services:
  postgres:
@@ -593,10 +560,8 @@ networks:
  default:
    external:
      name: jenkins_default
-</td>
-  </tr>
-</table>
 
+```
 
 * Each service has a build tag that points to the directory where the source of each part of our app resides, this directory must have a Dockerfile file that generates a proper image.
 
@@ -620,9 +585,10 @@ networks:
 
 File: project1/Dockerfile
 
-<table>
-  <tr>
-    <td># Base python 2.7 build
+
+```dockerfile
+
+# Base python 2.7 build
 # Python 2.7 | Django
 
 FROM python:2.7
@@ -672,18 +638,12 @@ WORKDIR /var/projects/project1
 CMD ["sh", "./deploy/container_start.sh"]
 
 # Expose listen ports
-EXPOSE 8002</td>
-  </tr>
-</table>
+EXPOSE 8002
 
-
-#### Front end application
+Front end application
 
 File: project1-front/Dockerfile
-
-<table>
-  <tr>
-    <td>FROM node:carbon
+FROM node:carbon
 
 # Create app directory
 RUN mkdir -p /var/projects/project1 && mkdir -p /var/projects/project1/bower_components
@@ -714,12 +674,6 @@ RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 COPY nginx/default.conf /etc/nginx/sites-available/default
 
 EXPOSE 80
-
-#CMD ["nginx", "-g", "daemon off;"]
 CMD ["service","nginx","start"]
-
-</td>
-  </tr>
-</table>
-
+```
 
