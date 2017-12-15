@@ -1,0 +1,23 @@
+version: "3"
+services:
+  master:
+    build: ./jenkins
+    image: jenkins-master
+    volumes:
+      - 'jenkins-data:/var/jenkins_home'
+      - 'jenkins-log:/var/log/jenkins'
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "50000:50000"
+    environment:
+      JAVA_OPTS: "-Djava.awt.headless=true"
+  nginx:
+    build: ./nginx
+    image: jenkins-nginx
+    ports:
+    - "80:80"
+    links:
+     - master:jenkins
+volumes:
+  jenkins-data:
+  jenkins-log:

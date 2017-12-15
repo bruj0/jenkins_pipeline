@@ -1,0 +1,35 @@
+version: '3'
+
+services:
+  postgres:
+    container_name: 'postgres'
+    image: 'postgres:9.5.3'
+    ports:
+      - '127.0.0.1:6432:5432'
+    volumes:
+      - 'pgdata:/var/lib/postgresql/data/'
+  api:
+    container_name: project1-api
+    build: ./project1
+    image: project1-api:develop
+    command: ["sh", "./deploy/container_start.sh"]
+    ports:
+      - "8002:8002"
+    depends_on:
+      - postgres
+  project1:
+    container_name: project1-front
+    build: ./project1-front
+    image: project1-front:develop
+    command: [ "service", "nginx", "start" ]
+    ports:
+      - 8080:80
+    depends_on:
+      - api
+volumes:
+  pgdata:
+networks:
+  default:
+    external:
+      name: jenkins_default
+      

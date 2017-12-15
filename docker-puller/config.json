@@ -1,0 +1,8 @@
+{
+    "host": "172.16.0.152",
+    "port": 9010,
+    "token": "7a5afff405e7bb61efc424026d6d38c1",
+    "hooks": {
+        "project1": "scripts/restart-project1.sh"
+    }
+}

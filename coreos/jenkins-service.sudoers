@@ -1,0 +1,2 @@
+Cmnd_Alias RESTART_PROJECT1 = /bin/systemctl reload project1.service
+jenkins-service ALL=(ALL:ALL) NOPASSWD: RESTART_PROJECT1

@@ -1,0 +1,13 @@
+[Unit]
+Description=project1 reloader
+After=syslog.target network.target
+
+[Service]
+Type=simple
+User=jenkins-service
+WorkingDirectory=
+ExecStart=/home/jenkins-service/docker-puller/dockerpuller/bin/python /home/jenkins-service/docker-puller/dockerpuller/app.py
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target

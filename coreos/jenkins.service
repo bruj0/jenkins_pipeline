@@ -1,0 +1,22 @@
+[Unit]
+Description=Jenkins container starter
+After=docker.service network-online.target
+Requires=docker.service network-online.target
+
+[Service]
+WorkingDirectory=/home/project1/jenkins
+User=project1
+Type=oneshot
+RemainAfterExit=yes
+
+#ExecStartPre=/opt/bin/docker-compose pull --quiet --parallel
+ExecStart=/opt/bin/docker-compose up -d
+
+ExecStop=/opt/bin/docker-compose down
+
+#ExecReload=/usr/local/bin/docker-compose pull --quiet --parallel
+#ExecReload=/usr/local/bin/docker-compose -d --force-recreate
+
+[Install]
+WantedBy=multi-user.target
+
