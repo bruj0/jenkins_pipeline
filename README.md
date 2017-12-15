@@ -46,7 +46,7 @@ We will deploy a local VM , you can use any type of deployment that CoreOS accep
 
 [https://coreos.com/os/docs/latest/](https://coreos.com/os/docs/latest/)
 
-File: jenkins/coreos/cloud-config.yml 
+File: coreos/cloud-config.yml 
 
 
 ```yaml
@@ -243,7 +243,7 @@ networks:
 
 To start this services we will use a unit file for Systemd which is the service manager used in CoreOS, again this should be done using Ignition configuration and not be done manually.
 
-File: jenkins/coreos/jenkins.service
+File: coreos/jenkins.service
 
 ```ini
 [Unit]
@@ -465,7 +465,7 @@ pip install -r requirements.txt
 ```
 #### The configuration will be:
 
-File: jenkins/docker-puller/config.json
+File: docker-puller/config.json
 
 ```json
 {
@@ -495,8 +495,7 @@ Will run our script at docker-puller/scripts/restart-project1.sh.
 
 We will configure docker-puller as a system service by using this systemd unit:
 
-File: jenkins/coreos/docker-puller.service
-
+File: coreos/docker-puller.service
 
 ```ini
 [Unit]
@@ -520,11 +519,11 @@ WantedBy=multi-user.target
 
 Our application runs under django and consist of a frontend, backend and a database.
 
-It will orchestrated using docker-compose and each one of the parts will have its own container.
+It will be orchestrated using docker-compose and each one of the parts will have its own container.
 
 This docker-compose file describes the "dev" branch of our application and can be used for any other branch like master or production.
 
-
+File: project1/docker-compose.yml
 ```dockerfile
 version: '3'
 
@@ -584,7 +583,6 @@ networks:
 #### API application
 
 File: project1/Dockerfile
-
 
 ```dockerfile
 
