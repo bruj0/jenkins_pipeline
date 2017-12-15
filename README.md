@@ -1,8 +1,8 @@
-A lean Continuous Deployment, Testing and Integration Pipeline using CoreOS/Docker/Jenkins
+# A lean Continuous Deployment, Testing and Integration Pipeline using CoreOS/Docker/Jenkins
 
 By Rodrigo A. Diaz Leven
 
-# Disclaimer and prologue
+## Disclaimer and prologue
 
 We are going to use CoreOS as the base of our pipeline because in my opinion it's the best suited to build cloud immutable servers with the right Docker support at the kernel level.
 
@@ -16,7 +16,7 @@ More documentation on this can be found here:[ https://coreos.com/os/docs/latest
 
 However we will **NOT **be using this technique besides the initial configuration because it's beyond the scope of this article and so its left as an exercise to the reader.
 
-# Integration
+## Integration
 
 ![image alt text](image_0.png)
 
