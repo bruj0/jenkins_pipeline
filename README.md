@@ -30,23 +30,23 @@ By Rodrigo A. Diaz Leven
 
 ## Disclaimer and prologue
 
-We are going to use CoreOS as the base of our pipeline because in my opinion it's the best suited to build cloud immutable servers with the right Docker support at the kernel level.
+We are going to use CoreOS as the base of our pipeline because in my opinion, it's the best suited to build cloud immutable servers with the right Docker support at the kernel level.
 
 The idea behind CoreOS is that an installation can be replicated many times without the use of an external application like Ansible or Puppet.
 
-This is done by writing a configuration file that the installer reads and execute at install time  to configure the OS as you see fit and also can be used to replicate the same server build many times.
+This is done by writing a configuration file that the installer reads and execute at install time to configure the OS as you see fit and also can be used to replicate the same server build many times.
 
 We could say that this a way to have "OS as code" the same as we have “Infrastructure as code” with Terraform.
 
 More documentation on this can be found here:[ https://coreos.com/os/docs/latest/provisioning.html](https://coreos.com/os/docs/latest/provisioning.html)
 
-However we will **NOT **be using this technique besides the initial configuration because it's beyond the scope of this article and so its left as an exercise to the reader.
+However, we will **NOT** be using this technique besides the initial configuration because it's beyond the scope of this article and so its left as an exercise to the reader.
 
 ## Integration
 
 ![image alt text](image_0.png)
 
-The idea behind this pipeline is to do continuous integration and deployment of an applications using Docker as a way to virtualize the environments and Jenkins for the automatization side but any technology can be use to replace them like [RTK ](https://coreos.com/rkt/)and [CircleCI](https://circleci.com/).
+The idea behind this pipeline is to do continuous integration and deployment of applications using Docker as a way to virtualize the environments and Jenkins for the automatization side but any technology can be used to replace them like [RTK ](https://coreos.com/rkt/)and [CircleCI](https://circleci.com/).
 
 Another requirement met is to use a simple and super lean infrastructure of a single server with a minimum of 4GB of ram.
 
@@ -54,13 +54,13 @@ We won't be using any clusters, like Kubernetes or Docker Swarm or any other typ
 
 Everything will run under a Docker container, this way it will be an immutable server, even Jenkins and Nginx.
 
-We will use a django application as an example that has a frontend, backend and a database running in postgres, something really common this days, but any type of application that can be run in a container can work in this pipeline.
+We will use a Django application as an example that has a frontend, backend and a database running in Postgres, something really common , but any type of application that can be run in a container can work in this pipeline.
 
 Jenkins will poll the branches for commits or pull requests and  will checkout the code,create a Docker image for the proper branch and optionally push it to the registry and tag it.
 
-However this Docker image will first has to pass our Unit testing and then it will be deployed, if it fails we will be notified and the image will not be used.
+However, this Docker image will first have to pass our Unit testing and then it will be deployed, if it fails we will be notified and the image will not be used.
 
-Its very important that the developers use the same environments to the one that are put into produccion to minimize runtime errors.
+It's very important that the developers use the same environments to the one that is put into production to minimize runtime errors.
 
 This means that the developers should use the docker images we create to run the application while they are modifying it.
 
@@ -68,7 +68,7 @@ This way we make sure that there won't be any runtime errors when we deploy to p
 
 ## CoreOS install
 
-We will deploy a local VM , you can use any type of deployment that CoreOS accepts:
+We will deploy a local VM, you can use any type of deployment that CoreOS accepts:
 
 [https://coreos.com/os/docs/latest/](https://coreos.com/os/docs/latest/)
 
@@ -112,11 +112,11 @@ users:
   - name: systemd-networkd.service
     command: restart
 ```
-This will create a "**core**" user that will authenticate to the OS with a **SSH key**, remember that this should not be used in a production server.
+This will create a "**core**" user that will authenticate to the OS with a **SSH key**, remember that this should not be used on a production server.
 
 We also add this user to the **docker **and **sudo **groups so we can use both tools.
 
-Since we are deploying in a VM we will configure a fixed IP but normally in a cloud environment dhcp will be used.
+Since we are deploying in a VM we will configure a fixed IP but normally in a cloud environment DHCP will be used.
 
 More info how to configure networking at [https://coreos.com/os/docs/latest/network-config-with-networkd.html](https://coreos.com/os/docs/latest/network-config-with-networkd.html)
 
@@ -152,7 +152,7 @@ this is not a docker-in-docker solution, we just use the docker client.
 
 To do this we add the official deb repository for stretch and install the rest of the tools needed.
 
-Its very important to switch to the user **jenkins** after we are finishing installing so jenkins doesnt run under root.
+Its very important to switch to the user **jenkins** after we are finishing installing so Jenkins doesn't run under root.
 
 ### Nginx Dockerfile
 
@@ -215,11 +215,11 @@ location / {
 
 All this wildcard configuration does it connect our applications domain name with the proper service living inside a container.
 
-For example the URL http://**jenkins**.devel.example.org will be proxied to [http://jenkins:80](http://project1:80) where jenkins is the name of the service we declare in our docker-compose file.
+For example the URL http://**jenkins**.devel.example.org will be proxied to [http://jenkins:80](http://project1:80) where Jenkins is the name of the service we declare in our docker-compose file.
 
 This resolves to the correct container IP via the docker DNS system, more information: [https://docs.docker.com/engine/userguide/networking/](https://docs.docker.com/engine/userguide/networking/)
 
-Sometimes we need to specify a different port than 80 and for this we use a nginx map: map $sname $port
+Sometimes we need to specify a different port than 80 and for this, we use a nginx map: map $sname $port
 
 More information: [http://nginx.org/en/docs/http/ngx_http_map_module.html](http://nginx.org/en/docs/http/ngx_http_map_module.html)
 
@@ -308,9 +308,9 @@ WantedBy=multi-user.target
 
 ### Configuring Jenkins
 
-After we have Jenkins running , visit the UI at [http://jenkins.devel.example.com](http://jenkins.devel.example.com) 
+After we have Jenkins running, visit the UI at [http://jenkins.devel.example.com](http://jenkins.devel.example.com) 
 
-You will be asked for a generated one time password that can be found on the docker-compose logs with:
+You will be asked for a generated one-time password that can be found in the docker-compose logs with:
 
 **$ docker-compose logs jenkins**
 
@@ -322,7 +322,7 @@ And configure a new Item using this Plugin:
 
 We need to add the credentials of the user that will be used to connect to Github and the owner of the repository.
 
-This can be two totally different users, usually the owner is the name of the Organizations and the credentials a user within this Organization that has access to the repositories.
+This can be two totally different users, usually, the owner is the name of the Organizations and the credentials a user within this Organization that has access to the repositories.
 
 ![image alt text](image_2.png)
 
@@ -382,7 +382,7 @@ def handleError(String message){
 
 * Change **SERVER_INTERNAL_IP** with the internal IP of your server, this is how we tell the Docker engine to pull and restart the containers once a build has passed testing and building.
 
-* Create a .jenkins-env file that will hold variables specific for the repository such as the name of the image that this project will use, example:
+* Create a .jenkins-env file that will hold variables specific to the repository such as the name of the image that this project will use, example:
 
 File: project1/.jenkins-env
 
@@ -440,7 +440,7 @@ This will run inside the Docker container we just built.
 
 After the build has passed testing and optionally pushed to the registry, we have to restart the service wherever is running.
 
-This can be done with a multitude of tools but in this article we will use a helper application that listens on the private IP of the server for a token and a tag identifier to run a set of commands for us, normally pull the new image and restart the service.
+This can be done with a multitude of tools but in this article, we will use a helper application that listens on the private IP of the server for a token and a tag identifier to run a set of commands for us, normally pull the new image and restart the service.
 
 This is a great simple python app called docker-puller: [https://github.com/glowdigitalmedia/docker-puller](https://github.com/glowdigitalmedia/docker-puller)
 
@@ -517,7 +517,7 @@ An empty POST to the URL:
 
 Will run our script at docker-puller/scripts/restart-project1.sh.
 
-### Docker-puller as a OS service
+### Docker-puller as an OS service
 
 We will configure docker-puller as a system service by using this systemd unit:
 
@@ -543,7 +543,7 @@ WantedBy=multi-user.target
 
 ### Example application Project1
 
-Our application runs under django and consist of a frontend, backend and a database.
+Our application runs under Django and consist of a frontend, backend, and a database.
 
 It will be orchestrated using docker-compose and each one of the parts will have its own container.
 
@@ -590,13 +590,13 @@ networks:
 
 * Each service has a build tag that points to the directory where the source of each part of our app resides, this directory must have a Dockerfile file that generates a proper image.
 
-* We bind port **6432 **on localhost to the postgres container port **5432 **in case we need to access it using psql
+* We bind port **6432 **on localhost to the Postgres container port **5432 **in case we need to access it using psql
 
 * **/deploy/container_start.sh** is our entrypoint for the API part of the application
 
 * Port **8002 **is exposed as the API port so the backend can access it.
 
-* The frontend part runs nginx inside the container serving the static files that connects to the API, ie AngularJS.
+* The frontend part runs nginx inside the container serving the static files that connect to the API, ie AngularJS.
 
 * The frontend exposes the port **8080 **redirected to his internal **80 **port. 
 
@@ -642,7 +642,7 @@ RUN apt-get -y install binutils libproj-dev gdal-bin
 ##############################################################################
 
 RUN apt-get install -y nano wget
-# build dependencies for postgres and image bindings
+# build dependencies for Postgres and image bindings
 RUN apt-get install -y python-imaging python-psycopg2
 
 ##############################################################################
