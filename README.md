@@ -17,8 +17,8 @@ By Rodrigo A. Diaz Leven
 - [Deployment to Development](#deployment-to-development)
   * [Deploying the image on build pass](#deploying-the-image-on-build-pass)
     + [Installing Python in CoreOS](#installing-python-in-coreos)
-    + [Installing Docker-puller](#installing-docker--puller)
-    + [Docker-puller as a OS service](#docker--puller-as-a-os-service)
+    + [Installing Docker puller](#installing-docker-puller)
+    + [Docker puller as a OS service](#docker-puller-as-a-os-service)
     + [Example application Project1](#example-application-project1)
     + [Dockerfile for our applications](#dockerfile-for-our-applications)
       - [API application](#api-application)
@@ -475,7 +475,7 @@ ln -sf /opt/python/bin/python /opt/bin/python2
 ln -sf /opt/python/bin/virtualenv /opt/bin/virtualenv
 ```
 
-### Installing Docker-puller
+### Installing Docker puller
 
 We follow the simple steps to install docker puller:
 
@@ -488,7 +488,7 @@ virtualenv dockerpuller/
 source dockerpuller/bin/activate
 pip install -r requirements.txt
 ```
-#### The configuration will be:
+The configuration will be:
 
 File: docker-puller/config.json
 
@@ -516,7 +516,7 @@ An empty POST to the URL:
 
 Will run our script at docker-puller/scripts/restart-project1.sh.
 
-### Docker-puller as an OS service
+### Docker puller as an OS service
 
 We will configure docker-puller as a system service by using this systemd unit:
 
