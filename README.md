@@ -2,6 +2,32 @@
 
 By Rodrigo A. Diaz Leven
 
+- [A lean Continuous Deployment, Testing and Integration Pipeline using CoreOS/Docker/Jenkins](#a-lean-continuous-deployment--testing-and-integration-pipeline-using-coreos-docker-jenkins)
+  * [Disclaimer and prologue](#disclaimer-and-prologue)
+  * [Integration](#integration)
+  * [CoreOS install](#coreos-install)
+  * [Jenkins and Nginx](#jenkins-and-nginx)
+    + [Jenkins Dockerfile](#jenkins-dockerfile)
+    + [Nginx Dockerfile](#nginx-dockerfile)
+    + [Binding everything with docker-compose](#binding-everything-with-docker-compose)
+    + [Systemd service for Jenkins/Nginx](#systemd-service-for-jenkins-nginx)
+    + [Configuring Jenkins](#configuring-jenkins)
+    + [Jenkins Pipeline Code](#jenkins-pipeline-code)
+- [Unit Testing](#unit-testing)
+- [Deployment to Development](#deployment-to-development)
+  * [Deploying the image on build pass](#deploying-the-image-on-build-pass)
+    + [Installing Python in CoreOS](#installing-python-in-coreos)
+    + [Installing Docker-puller](#installing-docker-puller)
+      - [The configuration will be:](#the-configuration-will-be-)
+    + [Docker-puller as a OS service](#docker-puller-as-a-os-service)
+    + [Example application Project1](#example-application-project1)
+    + [Dockerfile for our applications](#dockerfile-for-our-applications)
+      - [API application](#api-application)
+- [Deployment to Production in AWS](#deployment-to-production-in-aws)
+  * [AWS Configuration](#aws-configuration)
+  * [Instances configurations](#instances-configurations)
+  * [Jenkins](#jenkins)
+
 ## Disclaimer and prologue
 
 We are going to use CoreOS as the base of our pipeline because in my opinion it's the best suited to build cloud immutable servers with the right Docker support at the kernel level.
@@ -406,11 +432,11 @@ This can be done by adding a new stage to the pipeline in the Jenkinsfile file.
 
 This will run inside the Docker container we just built.
 
-# Deployment
+# Deployment to Development
 
 ![image alt text](image_5.png)
 
-### Deploying the image on build pass
+## Deploying the image on build pass
 
 After the build has passed testing and optionally pushed to the registry, we have to restart the service wherever is running.
 
@@ -674,4 +700,77 @@ COPY nginx/default.conf /etc/nginx/sites-available/default
 EXPOSE 80
 CMD ["service","nginx","start"]
 ```
+# Deployment to Production in AWS
+We will use a two account setup to deploy to master.
 
+This way we can have complete separation between Development and Production.
+
+The idea is to allow only the Operations people to be able to access the Production servers.
+
+One **Account A** will have the Jenkins/Development instance and **Account B** the Production instance.****
+
+## AWS Configuration
+
+* **Account A:** Give the instance where Jenkins is running permissions to access ECR:
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ecr:*",
+                "cloudtrail:LookupEvents"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+* **Account A:** Attach the role to the instance: 
+
+![image alt text](image_6.png)
+
+* **Account B:** Configure the ECR repository in the production account, to permit the push/pull from the Jenkins instance by using the account ID from Account A in the Principal value.
+
+![image alt text](image_7.png)
+
+## Instances configurations
+
+* Login and run  this command to see if the permissions are ok (replace XXX with your Production account ID):
+
+```
+# su - jenkins_user
+$ docker run --rm -t -i brentley/awscli ecr get-login --registry-ids XXXXXXXXXXX --region us-east-1
+docker login -u AWS -p eyJwYXlsb2FkIjoiS1o4MX...
+```
+If successful you will see the command needed to execute to login to the repository in ECR.
+
+* In your Production instance open the port 9010 to access Docker puller **only** from your Jenkins instance public IP.
+  (This could also be done by using VPC Peering between the accounts and using private IPs)
+
+* In the Production instance configure Docker compose files to start the application
+
+* Configure docker puller to restart the application
+
+## Jenkins
+
+* Configure AWS credentials in Jenkins and name it "**ec2role**", use the ARN role you created in the first step.
+
+* We will a add a new step to our Pipeline, on the master or production branch, called "Docker push" after the build step.
+  (Replace with your repository URL)
+
+```groovy
+  steage ('Docker Push') {
+    docker.withRegistry("https://XXXXXXXX.dkr.ecr.us-east-1.amazonaws.com",''ecr:us-east-1:ec2role') {
+    docker.image("${imagename}:${tag}").push()
+  }
+```
+
+* Change the deploy URL to point to your production server
+```
+  stage ('Deploy') {
+    sh "curl -o /dev/null -s -X POST 'http://PRODUCTION_PUBLIC_IP:9010/?token=7a5afff405e7bb61efc424026d6d38c1&hook=project1'"
+  }
+```
