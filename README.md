@@ -1,31 +1,34 @@
 # A lean Continuous Deployment, Testing and Integration Pipeline using CoreOS/Docker/Jenkins
 
 By Rodrigo A. Diaz Leven
+<!-- TOC -->
 
-- [A lean Continuous Deployment, Testing and Integration Pipeline using CoreOS/Docker/Jenkins](#a-lean-continuous-deployment--testing-and-integration-pipeline-using-coreos-docker-jenkins)
-  * [Disclaimer and prologue](#disclaimer-and-prologue)
-  * [Integration](#integration)
-  * [CoreOS install](#coreos-install)
-  * [Jenkins and Nginx](#jenkins-and-nginx)
-    + [Jenkins Dockerfile](#jenkins-dockerfile)
-    + [Nginx Dockerfile](#nginx-dockerfile)
-    + [Binding everything with docker-compose](#binding-everything-with-docker-compose)
-    + [Systemd service for Jenkins/Nginx](#systemd-service-for-jenkins-nginx)
-    + [Configuring Jenkins](#configuring-jenkins)
-    + [Jenkins Pipeline Code](#jenkins-pipeline-code)
+- [A lean Continuous Deployment, Testing and Integration Pipeline using CoreOS/Docker/Jenkins](#a-lean-continuous-deployment-testing-and-integration-pipeline-using-coreosdockerjenkins)
+    - [Disclaimer and prologue](#disclaimer-and-prologue)
+    - [Integration](#integration)
+    - [CoreOS install](#coreos-install)
+    - [Jenkins and Nginx](#jenkins-and-nginx)
+        - [Jenkins Dockerfile](#jenkins-dockerfile)
+        - [Nginx Dockerfile](#nginx-dockerfile)
+        - [Binding everything with docker-compose](#binding-everything-with-docker-compose)
+        - [Systemd service for Jenkins/Nginx](#systemd-service-for-jenkinsnginx)
+        - [Configuring Jenkins](#configuring-jenkins)
+        - [Jenkins Pipeline Code](#jenkins-pipeline-code)
 - [Unit Testing](#unit-testing)
 - [Deployment to Development](#deployment-to-development)
-  * [Deploying the image on build pass](#deploying-the-image-on-build-pass)
-    + [Installing Python in CoreOS](#installing-python-in-coreos)
-    + [Installing Docker puller](#installing-docker-puller)
-    + [Docker puller as a OS service](#docker-puller-as-a-os-service)
-    + [Example application Project1](#example-application-project1)
-    + [Dockerfile for our applications](#dockerfile-for-our-applications)
-      - [API application](#api-application)
+    - [Deploying the image on build pass](#deploying-the-image-on-build-pass)
+        - [Installing Python in CoreOS](#installing-python-in-coreos)
+        - [Installing Docker puller](#installing-docker-puller)
+        - [Docker puller as an OS service](#docker-puller-as-an-os-service)
+        - [Example application Project1](#example-application-project1)
+        - [Dockerfile for our applications](#dockerfile-for-our-applications)
+            - [API application](#api-application)
 - [Deployment to Production in AWS](#deployment-to-production-in-aws)
-  * [AWS Configuration](#aws-configuration)
-  * [Instances configurations](#instances-configurations)
-  * [Jenkins](#jenkins)
+    - [AWS Configuration](#aws-configuration)
+    - [Instances configurations](#instances-configurations)
+    - [Jenkins](#jenkins)
+
+<!-- /TOC -->
 
 ## Disclaimer and prologue
 
@@ -755,7 +758,18 @@ If successful you will see the command needed to execute to login to the reposit
 
 ## Jenkins
 
-* Configure AWS credentials in Jenkins and name it "**ec2role**", use the ARN role you created in the first step.
+* Install the Amazon ECR and AWS Credentials plugins:
+
+https://wiki.jenkins-ci.org/display/JENKINS/Amazon+ECR
+
+https://wiki.jenkins.io/display/JENKINS/CloudBees+AWS+Credentials+Plugin
+
+
+* Configure the AWS credentials in Jenkins and name it "**ec2role**", use the ARN role you created in the first step.
+
+Follow this path: Jenkins -> Your Org -> Credentials -> Folder -> Global credentials (unrestricted)
+
+![image alt text](image_8.png)
 
 * We will a add a new step to our Pipeline, on the master or production branch, called "Docker push" after the build step.
   (Replace with your repository URL)
